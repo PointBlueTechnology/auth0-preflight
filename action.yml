@@ -1,0 +1,43 @@
+name: auth0-preflight
+description: Catch Auth0 Universal Login, partials and Forms problems before you deploy them.
+author: Jerry Combs
+branding:
+  icon: check-circle
+  color: orange
+
+inputs:
+  path:
+    description: Directory holding the a0deploy export (branding/, prompts/, forms/, flows/).
+    required: false
+    default: .
+  config:
+    description: Config file. Defaults to <path>/.auth0-preflight.json if it exists.
+    required: false
+    default: ''
+  max-warnings:
+    description: Fail when there are more than this many warnings. Empty means warnings never fail.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Run auth0-preflight
+      shell: bash
+      # Inputs go through env, never straight into the script, so a crafted value can't inject shell.
+      env:
+        PREFLIGHT_BIN: ${{ github.action_path }}/bin/auth0-preflight.js
+        PREFLIGHT_PATH: ${{ inputs.path }}
+        PREFLIGHT_CONFIG: ${{ inputs.config }}
+        PREFLIGHT_MAX_WARNINGS: ${{ inputs.max-warnings }}
+      run: |
+        if ! command -v node >/dev/null 2>&1; then
+          echo "::error title=auth0-preflight::Node.js 20 or later is required. Add actions/setup-node before this step."
+          exit 2
+        fi
+
+        args=("$PREFLIGHT_PATH" --format github)
+        [ -n "$PREFLIGHT_CONFIG" ] && args+=(--config "$PREFLIGHT_CONFIG")
+        [ -n "$PREFLIGHT_MAX_WARNINGS" ] && args+=(--max-warnings "$PREFLIGHT_MAX_WARNINGS")
+
+        node "$PREFLIGHT_BIN" "${args[@]}"

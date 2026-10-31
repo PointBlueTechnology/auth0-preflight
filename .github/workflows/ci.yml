@@ -18,3 +18,34 @@ jobs:
           node-version: ${{ matrix.node }}
       - run: npm test
       - run: npm run lint:self
+
+  # Exercises action.yml the way another repo would use it.
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clean export passes with no warnings allowed
+        uses: ./
+        with:
+          path: test/fixtures/clean
+          max-warnings: 0
+
+      - name: Example passes when warnings are allowed
+        uses: ./
+        with:
+          path: examples/change-email
+
+      - name: Example fails when no warnings are allowed
+        id: strict
+        continue-on-error: true
+        uses: ./
+        with:
+          path: examples/change-email
+          max-warnings: 0
+
+      - name: Check the strict run failed
+        if: steps.strict.outcome != 'failure'
+        run: |
+          echo "::error::expected the strict run to fail, got ${{ steps.strict.outcome }}"
+          exit 1
