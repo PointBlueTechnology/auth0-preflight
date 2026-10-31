@@ -61,23 +61,37 @@ const form = (components, nextNode = '$ending') => ({
 const email = { id: 'new_email', category: 'FIELD', type: 'EMAIL', label: 'Email', required: true, sensitive: false };
 const jump = (id, next) => ({ id, category: 'BLOCK', type: 'JUMP_BUTTON', config: { text: 'Cancel', next_node: next } });
 
-test('form-jump-to-ending: flags a jump to the ending on a step with fields', async () => {
+// Mirrors the live-tenant test: required email + optional note, then Cancel / Skip / Next.
+test('form-jump-skips-fields: flags a jump to the ending as a cancel', async () => {
     const root = await makeTenant({ forms: [form([email, jump('cancel', '$ending')])] });
-    const [finding, ...rest] = only(await preflight(root), 'form-jump-to-ending');
+    const [finding, ...rest] = only(await preflight(root), 'form-jump-skips-fields');
     assert.equal(rest.length, 0);
     assert.equal(finding.severity, 'warning');
     assert.match(finding.message, /"Cancel" jumps to the ending, so required field new_email is neither validated nor submitted/);
+    assert.match(finding.message, /treats that as a cancel/);
     assert.ok(Number.isInteger(finding.line));
 });
 
-test('form-jump-to-ending: ignores jumps to other steps, steps without fields, and listed ids', async () => {
+test('form-jump-skips-fields: flags a jump to another step, which drops the fields too', async () => {
+    const root = await makeTenant({ forms: [form([email, jump('skip', 'step_2')])] });
+    const [finding] = only(await preflight(root), 'form-jump-skips-fields');
+    assert.match(finding.message, /jumps to "step_2", so required field new_email is neither validated nor submitted\. They never reach later steps/);
+});
+
+test('form-jump-skips-fields: lists all fields when none are required', async () => {
+    const note = { ...email, id: 'note', type: 'TEXT', required: false };
+    const root = await makeTenant({ forms: [form([note, { ...note, id: 'note_2' }, jump('cancel', '$ending')])] });
+    const [finding] = only(await preflight(root), 'form-jump-skips-fields');
+    assert.match(finding.message, /so fields note, note_2 are neither validated nor submitted/);
+});
+
+test('form-jump-skips-fields: ignores steps without fields and listed ids', async () => {
     const text = { id: 'intro', category: 'BLOCK', type: 'RICH_TEXT', config: { content: 'Hi' } };
     const forms = [
-        { ...form([email, jump('back', 'step_0')]), name: 'a' },
-        { ...form([text, jump('skip', '$ending')]), name: 'b' },
-        { ...form([email, jump('cancel', '$ending')]), name: 'c' },
+        { ...form([text, jump('skip', '$ending')]), name: 'a' },
+        { ...form([email, jump('cancel', '$ending')]), name: 'b' },
     ];
     const root = await makeTenant({ forms });
-    const findings = only(await preflight(root, { rules: { 'form-jump-to-ending': ['warning', { ignore: ['cancel'] }] } }), 'form-jump-to-ending');
+    const findings = only(await preflight(root, { rules: { 'form-jump-skips-fields': ['warning', { ignore: ['cancel'] }] } }), 'form-jump-skips-fields');
     assert.deepEqual(findings, []);
 });

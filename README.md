@@ -23,13 +23,15 @@ branding/templates/universal_login.html
 | `template-required-tags` | error | The page template has exactly one `{%- auth0:head -%}` and at least one `{%- auth0:widget -%}`. |
 | `partial-size` | error | Each partial slot (for example `form-content-end`) is at most 10,000 characters. The limit is per slot, not per screen. |
 | `flow-security-allow-failure` | warning | Flow steps that revoke access (deleting sessions, refresh tokens, grants or MFA enrolments) or block a user don't set `allow_failure: true`. Otherwise a failed revocation lets the flow carry on as if it had worked. |
-| `form-jump-to-ending` | warning | Flags Jump buttons that go straight to the form's ending from a step with fields. That's the usual way to build Cancel, but it skips validation and submits none of the step's fields, even required ones, so whatever runs after the form must handle that. |
+| `form-jump-skips-fields` | warning | Flags Jump buttons on a step with fields. A Jump button leaves its step without validating or submitting that step's fields, even required or filled-in ones, wherever it goes. A jump to the ending is the usual way to build Cancel, so whatever runs after the form must treat missing fields as a cancel. A jump to another step loses what the customer typed. |
 
-Both Forms and Flows rules take an `ignore` list of step or component ids for cases you've checked: `"form-jump-to-ending": ["warning", { "ignore": ["cancel"] }]`.
+Both Forms and Flows rules take an `ignore` list of step or component ids for cases you've checked: `"form-jump-skips-fields": ["warning", { "ignore": ["cancel"] }]`.
 
-### How the limits are counted
+### How the rules were tested
 
-Each limit was measured against a live tenant through the Management API, and the tests reproduce those results. The two limits count "characters" differently:
+The size limits, template tags and Jump button behaviour were tested on a live tenant, and the unit tests reproduce those results. (`flow-security-allow-failure` follows Auth0's documented meaning of `allow_failure`.)
+
+**Size limits.** Measured through the Management API. The two limits count "characters" differently:
 
 | Limit | Counted as | Accepted | Rejected |
 |---|---|---|---|
@@ -37,6 +39,17 @@ Each limit was measured against a live tenant through the Management API, and th
 | Partial slot, 10,000 | UTF-16 units (JavaScript `length`) | 5,000 emoji | 5,001 emoji |
 
 For ASCII-only markup, bytes, code points and UTF-16 units are all the same. The difference only shows with accented text or emoji. Auth0's error for an oversized template doesn't mention size ("Data does not match any schemas from 'oneOf'"), which is why this check exists.
+
+**Template tags.** A second `auth0:head` is rejected; a second `auth0:widget` is accepted.
+
+**Jump buttons.** A post-login Action recorded what a live form handed back for a step with a required email and an optional note:
+
+| Button pressed on step 1 | Fields received |
+|---|---|
+| Cancel (jump to the ending), fields empty | none, and the required email wasn't checked |
+| Cancel, both fields filled in | none |
+| Skip (jump to step 2), then Finish | only step 2's field |
+| Next (normal submit) | both step 1 fields |
 
 ## Input
 
@@ -72,14 +85,26 @@ Optional `.auth0-preflight.json` in the target directory, or `--config <file>`:
 
 ## CI
 
-In GitHub Actions the output switches to annotations automatically, so findings appear on the changed files in the PR:
+### GitHub Action
 
 ```yaml
-- uses: actions/setup-node@v4
+- uses: actions/checkout@v4
+- uses: PointBlueTechnology/auth0-preflight@main
   with:
-    node-version: 22
-- run: npx auth0-preflight ./tenant --max-warnings 0
+    path: tenant          # the a0deploy export; default .
+    max-warnings: 0       # optional; empty means warnings never fail
+    # config: .auth0-preflight.json
 ```
+
+Findings appear as annotations on the changed files in the pull request. The action needs Node.js 20 or later on the runner. GitHub-hosted runners have it; on a self-hosted runner, add `actions/setup-node` first.
+
+### Anywhere else
+
+```bash
+npx auth0-preflight ./tenant --max-warnings 0
+```
+
+Inside GitHub Actions the output switches to annotations automatically.
 
 Exit codes: `0` clean, `1` errors (or more warnings than `--max-warnings`), `2` the tool itself failed.
 

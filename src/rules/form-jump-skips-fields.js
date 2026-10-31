@@ -1,17 +1,23 @@
 import { lineOfId } from '../loader.js';
 
 /**
- * A Jump button that goes straight to `$ending` finishes the form without validating or
- * submitting the fields on its step. That's the usual way to build Cancel, but whatever runs
- * after the form (an Action's `onContinuePostLogin`, a resumed flow) receives none of those
- * fields, even required ones, and has to treat that as a cancel rather than a submission.
+ * A Jump button leaves its step without validating or submitting the step's fields, wherever it
+ * jumps to. Measured against a live tenant, with a required email and an optional note on step 1:
+ *
+ * - Cancel (jump to `$ending`), fields empty or filled in: the Action resumed with `fields: {}`.
+ * - Skip (jump to step 2), then Finish: only step 2's field arrived; step 1's were gone.
+ * - Next (normal submit): both step 1 fields arrived.
+ *
+ * Jumping to `$ending` is the usual way to build Cancel, and that's fine as long as whatever runs
+ * after the form (an Action's `onContinuePostLogin`, a resumed flow) treats the missing fields as a
+ * cancel. A jump to another step is more likely a bug: the customer filled in fields that vanish.
  */
 const ENDING = '$ending';
 
 /** @type {import('../types.js').Rule} */
 export default {
-    id: 'form-jump-to-ending',
-    description: 'Jump buttons to the form ending skip validation and submit none of the step\'s fields',
+    id: 'form-jump-skips-fields',
+    description: 'Jump buttons leave their step without validating or submitting its fields',
     severity: 'warning',
     options: {
         // Component ids to skip once the caller is known to handle the missing fields.
@@ -28,19 +34,25 @@ export default {
                 }
 
                 for (const button of components) {
-                    if (button.type !== 'JUMP_BUTTON' || button.config?.next_node !== ENDING || ignore.includes(button.id)) {
+                    if (button.type !== 'JUMP_BUTTON' || ignore.includes(button.id)) {
                         continue;
                     }
+                    const target = button.config?.next_node;
                     const required = fields.filter(f => f.required);
                     const skipped = (required.length ? required : fields).map(f => f.id);
                     const noun = `${required.length ? 'required ' : ''}field${skipped.length === 1 ? '' : 's'}`;
+                    const where = target === ENDING ? 'jumps to the ending' : `jumps to "${target}"`;
+                    const consequence =
+                        target === ENDING
+                            ? 'Make sure whatever runs after the form treats that as a cancel.'
+                            : 'They never reach later steps or whatever runs after the form.';
                     findings.push({
                         file,
                         line: lineOfId(text, button.id),
                         message:
-                            `Form "${data.name}" step "${node.id}": "${button.config.text ?? button.id}" jumps to the ending, ` +
+                            `Form "${data.name}" step "${node.id}": "${button.config?.text ?? button.id}" ${where}, ` +
                             `so ${noun} ${skipped.join(', ')} ${skipped.length === 1 ? 'is' : 'are'} neither validated nor submitted. ` +
-                            'Make sure whatever runs after the form handles that.',
+                            consequence,
                     });
                 }
             }
