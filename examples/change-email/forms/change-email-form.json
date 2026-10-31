@@ -1,0 +1,72 @@
+{
+  "name": "preflight sample - change email form",
+  "languages": {
+    "primary": "en"
+  },
+  "nodes": [
+    {
+      "id": "step_email",
+      "type": "STEP",
+      "coordinates": {
+        "x": 300,
+        "y": 0
+      },
+      "config": {
+        "components": [
+          {
+            "id": "new_email",
+            "category": "FIELD",
+            "type": "EMAIL",
+            "label": "New email",
+            "required": true,
+            "sensitive": false
+          },
+          {
+            "id": "save",
+            "category": "BLOCK",
+            "type": "NEXT_BUTTON",
+            "config": {
+              "text": "Change email"
+            }
+          },
+          {
+            "id": "cancel",
+            "category": "BLOCK",
+            "type": "JUMP_BUTTON",
+            "config": {
+              "text": "Cancel",
+              "next_node": "$ending"
+            }
+          }
+        ],
+        "next_node": "run_flow"
+      }
+    },
+    {
+      "id": "run_flow",
+      "type": "FLOW",
+      "coordinates": {
+        "x": 700,
+        "y": 0
+      },
+      "config": {
+        "flow_id": "preflight sample - change email",
+        "next_node": "$ending"
+      }
+    }
+  ],
+  "start": {
+    "next_node": "step_email",
+    "coordinates": {
+      "x": 0,
+      "y": 0
+    }
+  },
+  "ending": {
+    "resume_flow": true,
+    "coordinates": {
+      "x": 1000,
+      "y": 0
+    }
+  }
+}

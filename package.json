@@ -1,0 +1,31 @@
+{
+  "name": "auth0-preflight",
+  "version": "0.1.0",
+  "description": "Catch Auth0 Universal Login, partials and Forms problems before you deploy them.",
+  "type": "module",
+  "bin": {
+    "auth0-preflight": "bin/auth0-preflight.js"
+  },
+  "exports": "./src/index.js",
+  "files": [
+    "bin",
+    "src"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "lint:self": "node bin/auth0-preflight.js test/fixtures/clean",
+    "example": "node bin/auth0-preflight.js examples/change-email"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "auth0",
+    "universal-login",
+    "lint",
+    "ciam",
+    "a0deploy"
+  ],
+  "author": "Jerry Combs",
+  "license": "MIT"
+}

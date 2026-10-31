@@ -1,0 +1,41 @@
+{
+  "name": "preflight sample - change email",
+  "actions": [
+    {
+      "id": "notify_old_address",
+      "type": "AUTH0",
+      "action": "SEND_EMAIL",
+      "allow_failure": true,
+      "mask_output": false,
+      "params": {
+        "to": "{{context.user.email}}",
+        "subject": "Email changed",
+        "body": "<p>Your email was changed.</p>"
+      }
+    },
+    {
+      "id": "revoke_user_sessions",
+      "type": "AUTH0",
+      "action": "SEND_REQUEST",
+      "allow_failure": true,
+      "mask_output": false,
+      "params": {
+        "connection_id": "preflight-auth0",
+        "method": "DELETE",
+        "pathname": "/api/v2/users/{{context.user.user_id}}/sessions"
+      }
+    },
+    {
+      "id": "revoke_user_refresh_tokens",
+      "type": "AUTH0",
+      "action": "SEND_REQUEST",
+      "allow_failure": false,
+      "mask_output": false,
+      "params": {
+        "connection_id": "preflight-auth0",
+        "method": "DELETE",
+        "pathname": "/api/v2/users/{{context.user.user_id}}/refresh-tokens"
+      }
+    }
+  ]
+}
