@@ -89,7 +89,7 @@ Optional `.auth0-preflight.json` in the target directory, or `--config <file>`:
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: PointBlueTechnology/auth0-preflight@main
+- uses: PointBlueTechnology/auth0-preflight@v0.1.0
   with:
     path: tenant          # the a0deploy export; default .
     max-warnings: 0       # optional; empty means warnings never fail
