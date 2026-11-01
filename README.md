@@ -121,6 +121,10 @@ npm test
 
 No runtime dependencies; Node 20 or later.
 
+## About
+
+Built by Jerry Combs at [PointBlue Technology](https://www.pointbluetech.com), an identity and access management consultancy. The rules come from problems met in Auth0 customer identity work.
+
 ## License
 
 MIT

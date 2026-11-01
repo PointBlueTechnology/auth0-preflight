@@ -2,6 +2,14 @@
   "name": "auth0-preflight",
   "version": "0.1.0",
   "description": "Catch Auth0 Universal Login, partials and Forms problems before you deploy them.",
+  "homepage": "https://github.com/PointBlueTechnology/auth0-preflight#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PointBlueTechnology/auth0-preflight.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PointBlueTechnology/auth0-preflight/issues"
+  },
   "type": "module",
   "bin": {
     "auth0-preflight": "bin/auth0-preflight.js"
@@ -26,6 +34,9 @@
     "ciam",
     "a0deploy"
   ],
-  "author": "Jerry Combs",
+  "author": {
+    "name": "Jerry Combs",
+    "url": "https://www.pointbluetech.com"
+  },
   "license": "MIT"
 }
