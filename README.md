@@ -89,12 +89,14 @@ Optional `.auth0-preflight.json` in the target directory, or `--config <file>`:
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: PointBlueTechnology/auth0-preflight@v0.1.0
+- uses: PointBlueTechnology/auth0-preflight@v0
   with:
     path: tenant          # the a0deploy export; default .
     max-warnings: 0       # optional; empty means warnings never fail
     # config: .auth0-preflight.json
 ```
+
+`@v0` follows the latest 0.x release. Pin an exact version (`@v0.1.0`) or a commit SHA if you need builds that never change underneath you.
 
 Findings appear as annotations on the changed files in the pull request. The action needs Node.js 20 or later on the runner. GitHub-hosted runners have it; on a self-hosted runner, add `actions/setup-node` first.
 
